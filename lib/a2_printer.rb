@@ -1,4 +1,5 @@
 require "serial_connection"
+require "rmagick"
 
 class A2Printer
   def initialize(connection)
@@ -251,15 +252,51 @@ class A2Printer
     end
   end
 
-  # def print_bitmap(stream)
-  #   tmp = stream.getbyte
-  #   width = (stream.getbyte << 8) + tmp
-  #
-  #   tmp = stream.getbyte
-  #   height = (stream.getbyte << 8) + tmp
-  #
-  #   print_bitmap(width, height, stream)
-  # end
+  def print_image(source_image)
+    if source_image.kind_of? String
+      image_list = Magick::ImageList.new(source_image)
+    else
+      image_list = Magick::ImageList.new
+      image_list << source_image
+    end
+
+    # flatten transparent images with white background
+    image_list.new_image(image_list.first.columns, image_list.first.rows) do
+      self.background_color = "white"
+    end
+    image = image_list.reverse.flatten_images
+
+    if image.columns > 384 || image.rows > 384
+      image.change_geometry('384x384') do |cols, rows, img|
+       img.resize!(cols, rows)
+      end
+    end
+
+    image.format = 'MONO'
+    data_lsb = image.to_blob
+
+    height = image.rows
+    width = image.columns
+    width += 8 - (width % 8) if (width % 8) > 0
+
+    data_msb = ""
+    data_lsb.bytes do |b|
+      data_msb << (
+        (b & 0x80) >> 7 |
+        (b & 0x40) >> 5 |
+        (b & 0x20) >> 3 |
+        (b & 0x10) >> 1 |
+        (b & 0x08) << 1 |
+        (b & 0x04) << 3 |
+        (b & 0x02) << 5 |
+        (b & 0x01) << 7
+      )
+    end
+
+    puts "#{width}x#{height}, #{data_msb.length}"
+
+    print_bitmap(width, height, StringIO.new(data_msb))
+  end
 
   # Barcodes
 
