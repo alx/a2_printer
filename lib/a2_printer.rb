@@ -1,5 +1,8 @@
+require 'tempfile'
 require "serial_connection"
 require "RMagick"
+require 'rqrencoder'
+require 'rqrencoder-magick'
 
 class A2Printer
   def initialize(connection)
@@ -296,6 +299,16 @@ class A2Printer
     puts "#{width}x#{height}, #{data_msb.length}"
 
     print_bitmap(width, height, StringIO.new(data_msb))
+  end
+
+  def qrcode(data)
+    encoder = RQREncoder::QREncoder.new
+    qrcode = encoder.encode(data)
+    file = Tempfile.new(['qrcode','.png'])
+    qrcode.save(file.path)
+    print_image(file.path)
+    file.close
+    file.unlink
   end
 
   # Barcodes
