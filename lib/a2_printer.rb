@@ -1,5 +1,5 @@
 require "serial_connection"
-require "rmagick"
+require "RMagick"
 
 class A2Printer
   def initialize(connection)
