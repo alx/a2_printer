@@ -1,8 +1,7 @@
 require 'tempfile'
 require "serial_connection"
 require "RMagick"
-require 'rqrencoder'
-require 'rqrencoder-magick'
+require "yaml"
 
 class A2Printer
   def initialize(connection)
@@ -14,7 +13,7 @@ class A2Printer
     write_bytes(18, 84)
   end
 
-  def begin(heat_time=150)
+  def begin(heat_time=250)
     reset()
 
     heat_interval = 50 # 2 is default from page 23 of datasheet. Controls speed of printing and darkness
@@ -299,16 +298,6 @@ class A2Printer
     puts "#{width}x#{height}, #{data_msb.length}"
 
     print_bitmap(width, height, StringIO.new(data_msb))
-  end
-
-  def qrcode(data)
-    encoder = RQREncoder::QREncoder.new
-    qrcode = encoder.encode(data)
-    file = Tempfile.new(['qrcode','.png'])
-    qrcode.save(file.path)
-    print_image(file.path)
-    file.close
-    file.unlink
   end
 
   # Barcodes
