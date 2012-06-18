@@ -1,9 +1,9 @@
 require "serialport"
 
 class SerialConnection
-  def initialize(port=nil)
-    port_str = port || "/dev/tty.usbmodemfd121"
-    baud_rate = 9600
+  def initialize(options)
+    port_str = options[:port]
+    baud_rate = options[:baud_rate]
     data_bits = 8
     stop_bits = 1
     parity = SerialPort::NONE
